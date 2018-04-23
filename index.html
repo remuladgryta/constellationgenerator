@@ -51,6 +51,16 @@
 		      constellationDistance.input(onInput);
 		      constellationDistance.parent(cmddiv);
 	      }
+        let jsondiv = createDiv('');
+        {
+          inpjson = createElement('textarea');
+          inpjson.parent(jsondiv);
+          spanjson = createDiv('Copy this to save current settings. Paste and press load json to restore them.');
+          spanjson.parent(jsondiv);
+          btnjson = createButton('load json');
+          btnjson.mousePressed(readJSON);
+          btnjson.parent(jsondiv);
+        }
 	      onInput();
 	      noLoop();
       }
@@ -80,6 +90,28 @@
 	      randomSeed(constellationSeed);
 	      constellations = generateConstellations(stars);
 	      redraw();
+        updateJSON()
+      }
+
+      function updateJSON(){
+        let data = {
+          'seed': inpSeed.value(),
+          'num_constellations': numConstellations.value(),
+          'constellation_size': constellationSize.value(),
+          'constellation_distance': constellationDistance.value(),
+          'star_density': starDensity.value(),
+        }
+        inpjson.value(JSON.stringify(data));
+      }
+
+      function readJSON(){
+        data = JSON.parse(inpjson.value());
+        inpSeed.value(data.seed);
+        numConstellations.value(data.num_constellations);
+        constellationSize.value(data.constellation_size);
+        constellationDistance.value(data.constellation_distance);
+        starDensity.value(data.star_density);
+        onInput();
       }
 
       function generateStars(){
