@@ -6,6 +6,7 @@
       const LUMINOSITY_MULTIPLIER = 2;
 
 
+      var CANVAS_SIZE = 500;
       var CONSTELLATION_SIZE = 7;
       var NUM_CONSTELLATIONS = 7;
       var CONSTELLATION_DISTANCE = 0.1;
@@ -14,7 +15,6 @@
       var constellations = [];
 
       function setup() {
-        createCanvas(500, 500);
 	      let seed = floor(random(Number.MAX_SAFE_INTEGER));
 	      let sdiv = createDiv('');
 	      {
@@ -51,6 +51,15 @@
 		      constellationDistance.input(onInput);
 		      constellationDistance.parent(cmddiv);
 	      }
+	      let csdiv = createDiv('');
+	      {
+	      	createSpan('canvas size: ').parent(csdiv);
+	      	canvasSize = createSlider(100,2000, 500, 100);
+	      	canvasSize.input(onInput);
+	      	canvasSize.parent(csdiv);
+	      }
+
+	    createCanvas(CANVAS_SIZE, CANVAS_SIZE);
         let jsondiv = createDiv('');
         {
           inpjson = createElement('textarea');
@@ -81,11 +90,15 @@
       }
 
       function onInput(){
+
 	      randomSeed(inpSeed.value());
 	      let constellationSeed = random(Number.MAX_SAFE_INTEGER);
 	      NUM_CONSTELLATIONS = numConstellations.value();
 	      CONSTELLATION_SIZE = constellationSize.value();
 	      CONSTELLATION_DISTANCE = pow(2, constellationDistance.value())/1024;
+	      CANVAS_SIZE = canvasSize.value();
+
+	      resizeCanvas(CANVAS_SIZE, CANVAS_SIZE);
 	      stars = generateStars();
 	      randomSeed(constellationSeed);
 	      constellations = generateConstellations(stars);
