@@ -22,6 +22,8 @@
 		      inpSeed = createInput(seed);
 		      inpSeed.input(onInput);
 		      inpSeed.parent(sdiv);
+		      resetSeed = createButton('change seed');
+		      resetSeed.mousePressed(newSeed);
 	      }
 	      let ddiv = createDiv('');
 	      {
@@ -63,6 +65,12 @@
         }
 	      onInput();
 	      noLoop();
+      }
+
+      function newSeed(){
+      	let seed = floor(random(Number.MAX_SAFE_INTEGER));
+      	inpSeed.value(seed);
+      	onInput();
       }
 
       function draw() {
