@@ -66,10 +66,9 @@
 
         let icdiv = createDiv('');
 	      {
-	      	createSpan('invert colours: ').parent(icdiv);
-	      	invertedColours = createCheckbox();
-            invertedColours.changed(onInput);
-	      	invertedColours.parent(icdiv);
+          invertedColours = createCheckbox('invert colours');
+          invertedColours.changed(onInput);
+          invertedColours.parent(icdiv);
 	      }
 
         let jsondiv = createDiv('');
