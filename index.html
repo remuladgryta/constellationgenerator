@@ -10,6 +10,7 @@
       var CONSTELLATION_SIZE = 7;
       var NUM_CONSTELLATIONS = 7;
       var CONSTELLATION_DISTANCE = 0.1;
+      var INVERTED_COLOURS = 0;
       var inpSeed;
       var stars = [];
       var constellations = [];
@@ -22,6 +23,8 @@
 		      inpSeed = createInput(seed);
 		      inpSeed.input(onInput);
 		      inpSeed.parent(sdiv);
+		      resetSeed = createButton('change seed');
+		      resetSeed.mousePressed(newSeed);
 	      }
 	      let ddiv = createDiv('');
 	      {
@@ -59,7 +62,16 @@
 	      	canvasSize.parent(csdiv);
 	      }
 
-	    createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+	      createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+
+        let icdiv = createDiv('');
+	      {
+	      	createSpan('invert colours: ').parent(icdiv);
+	      	invertedColours = createCheckbox();
+            invertedColours.changed(onInput);
+	      	invertedColours.parent(icdiv);
+	      }
+
         let jsondiv = createDiv('');
         {
           inpjson = createElement('textarea');
@@ -74,13 +86,28 @@
 	      noLoop();
       }
 
+      function newSeed(){
+      	let seed = floor(random(Number.MAX_SAFE_INTEGER));
+      	inpSeed.value(seed);
+      	onInput();
+      }
+
       function draw() {
 	      translate(width/2, height/2);
-        background(0);
-	      stroke(255);
-	      noFill();
-	      strokeWeight(1);
-	      ellipse(0, 0, width, height);
+	      if (INVERTED_COLOURS){
+	      	background(255);
+            stroke(0);
+	        noFill();
+	        strokeWeight(1);
+	        ellipse(0, 0, width, height);
+		  }else{
+		  	background(0);
+	        stroke(255);
+		    noFill();
+		    strokeWeight(1);
+		    ellipse(0, 0, width, height);
+		  }
+          
 	      for(let star of stars){
 		      star.show();
 	      }
@@ -93,6 +120,7 @@
 
 	      randomSeed(inpSeed.value());
 	      let constellationSeed = random(Number.MAX_SAFE_INTEGER);
+	      INVERTED_COLOURS = invertedColours.checked();
 	      NUM_CONSTELLATIONS = numConstellations.value();
 	      CONSTELLATION_SIZE = constellationSize.value();
 	      CONSTELLATION_DISTANCE = pow(2, constellationDistance.value())/1024;
@@ -113,6 +141,7 @@
           'constellation_size': constellationSize.value(),
           'constellation_distance': constellationDistance.value(),
           'star_density': starDensity.value(),
+          'inverted_colours': invertedColours.checked(),
         }
         inpjson.value(JSON.stringify(data));
       }
@@ -124,6 +153,7 @@
         constellationSize.value(data.constellation_size);
         constellationDistance.value(data.constellation_distance);
         starDensity.value(data.star_density);
+        invertedColours.checked(inverted_colours);
         onInput();
       }
 
@@ -204,7 +234,11 @@
 	      let cart = stereographicToCartesian(this.phi, this.theta);
 	      this.x = cart.x;
 	      this.y = cart.y;
-	      this.color = color(255,255,255);
+	      if (INVERTED_COLOURS){
+			this.color = color(0,0,0);
+	      }else{
+	      	this.color = color(255,255,255);
+	      }
       }
 
       Star.prototype.show = function(){
