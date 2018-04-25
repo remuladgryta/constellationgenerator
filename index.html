@@ -62,14 +62,14 @@
 	      	canvasSize.parent(csdiv);
 	      }
 
-	      createCanvas(CANVAS_SIZE, CANVAS_SIZE);
-
         let icdiv = createDiv('');
 	      {
           invertedColours = createCheckbox('invert colours');
           invertedColours.changed(onInput);
           invertedColours.parent(icdiv);
 	      }
+
+	      createCanvas(CANVAS_SIZE, CANVAS_SIZE);
 
         let jsondiv = createDiv('');
         {
