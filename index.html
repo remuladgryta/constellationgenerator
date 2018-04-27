@@ -1,7 +1,5 @@
 <html>
   <head>
-  </head>
-  <body>
     <style type="text/css">
       table, th, td{
         padding: 10px;
@@ -46,6 +44,254 @@
         height: 5px;
       }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/addons/p5.dom.min.js"></script>
+    <script>
+      const LUMINOSITY_MULTIPLIER = 2;
+
+
+      var CANVAS_SIZE = 500;
+      var CONSTELLATION_SIZE = 7;
+      var NUM_CONSTELLATIONS = 7;
+      var CONSTELLATION_DISTANCE = 0.1;
+      var INVERTED_COLOURS = 0;
+      var inpSeed;
+      var stars = [];
+      var constellations = [];
+
+      function setup() {
+        newSeed();
+        createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+        onInput();
+        noLoop();
+      }
+
+      function newSeed(){
+        let seed = floor(random(Number.MAX_SAFE_INTEGER));
+        document.getElementById("inpseed").value = seed;
+        onInput();
+      }
+
+      function draw() {
+        translate(width/2, height/2);
+        if (INVERTED_COLOURS){
+          background(255);
+          stroke(0);
+          noFill();
+          strokeWeight(1);
+          ellipse(0, 0, width-1, height-1);
+        }else{
+          background(0);
+          stroke(255);
+          noFill();
+          strokeWeight(1);
+          ellipse(0, 0, width-1, height-1);
+        }
+        for(let star of stars){
+          star.show();
+        }
+        for(let constellation of constellations){
+          constellation.show();
+        }
+      }
+
+      function onInput(){
+        randomSeed(document.getElementById("inpseed").value);
+        let constellationSeed = random(Number.MAX_SAFE_INTEGER);
+        INVERTED_COLOURS = document.getElementById("invertcolours").checked;
+        NUM_CONSTELLATIONS = document.getElementById("numconstellations").value;
+        CONSTELLATION_SIZE = document.getElementById("constellationsize").value;
+        CONSTELLATION_DISTANCE = pow(2, document.getElementById("constellationdistance").value)/1024;
+        CANVAS_SIZE = document.getElementById("canvassize").value;
+        resizeCanvas(CANVAS_SIZE, CANVAS_SIZE);
+        stars = generateStars();
+        randomSeed(constellationSeed);
+        constellations = generateConstellations(stars);
+        redraw();
+        updateJSON()
+      }
+
+      function updateJSON(){
+        let data = {
+          'seed': document.getElementById("inpseed").value,
+          'num_constellations': document.getElementById("numconstellations").value,
+          'constellation_size': document.getElementById("constellationsize").value,
+          'constellation_distance': document.getElementById("constellationdistance").value,
+          'star_density': document.getElementById("stardensity").value,
+          'inverted_colours': document.getElementById("invertcolours").checked,
+          'canvas_size': document.getElementById("canvassize").value,
+        }
+        document.getElementById("inpjson").value = JSON.stringify(data);
+      }
+
+      function readJSON(){
+        data = JSON.parse(document.getElementById("inpjson").value);
+        document.getElementById("inpseed").value = data.seed;
+        document.getElementById("numconstellations").value = data.num_constellations;
+        document.getElementById("constellationsize").value = data.constellation_size;
+        document.getElementById("constellationdistance").value = data.constellation_distance;
+        document.getElementById("stardensity").value = data.star_density;
+        document.getElementById("invertcolours").checked = data.inverted_colours;
+        document.getElementById("canvassize").value=data.canvas_size;
+        onInput();
+      }
+
+      function generateStars(){
+        let stars = new Array(floor(pow(2, document.getElementById("stardensity").value)));
+        for(let i =0; i<stars.length; i++){
+          stars[i] = randomStar();
+        }
+        stars.sort((a, b) => a.luminosity-b.luminosity);
+        return stars
+      }
+
+      function generateConstellations(stars){
+        let constellations = [];
+        let remaining = stars.slice();
+        while (constellations.length < NUM_CONSTELLATIONS && remaining.length > 0){
+          let constellation = new Constellation();
+          constellation.stars.push(remaining.pop());
+          while (constellation.stars.length < CONSTELLATION_SIZE){
+            let selected = random(constellation.stars);
+            let found = false;
+            for (let i = 0; i < remaining.length; i++){
+              let star = remaining[i];
+              let inrange = selected.projectedDistance(star) < CONSTELLATION_DISTANCE;
+              let nointersect = true;
+              for (let otherconst of constellations){
+                if (otherconst.intersects(selected, star)){
+                  nointersect = false;
+                }
+              }
+              if (inrange && nointersect){
+                constellation.stars.push(star);
+                constellation.edges.push([selected, star]);
+                remaining.splice(i, 1);
+                found = true;
+                break;
+              }
+            }
+            if (!found){
+              break;
+            }
+          }
+          constellations.push(constellation);
+        }
+        return constellations;
+      }
+
+
+
+      function polarToCartesian(angle, radius){
+        return {
+          x:radius * cos(angle),
+          y:radius * sin(angle)
+        };
+      }
+
+      function stereographicProject(phi, theta){
+        //returns a polar coordinate r, theta by projecting phi, theta
+        //from the sphere to the plane.
+        //phi is the zenith angle 0 <= phi <= PI
+        //theta is the azimuth angle 0 <= theta <= TWO_PI
+        return {
+          r:sin(phi)/(1-cos(phi)),
+          theta:theta
+        };
+      }
+
+      function stereographicToCartesian(phi, theta){
+        polar = stereographicProject(phi, theta);
+        return polarToCartesian(polar.theta, polar.r);
+      }
+
+      function Star(phi, theta, luminosity){
+        this.phi = phi;
+        this.theta = theta;
+        this.luminosity = luminosity;
+        this.r = stereographicProject(this.phi, this.theta).r;
+        let cart = stereographicToCartesian(this.phi, this.theta);
+        this.x = cart.x;
+        this.y = cart.y;
+        if (INVERTED_COLOURS){
+          this.color = color(0,0,0);
+        }else{
+          this.color = color(255,255,255);
+        }
+      }
+
+      Star.prototype.show = function(){
+        stroke(this.color);
+        strokeWeight(this.luminosity * LUMINOSITY_MULTIPLIER);
+        point(this.x * width / 2, this.y * height / 2);
+      }
+
+      Star.prototype.angleTo = function(other){
+        //returns the central angle between two stars in radians
+        Dphi = (this.phi - other.phi);
+        Dtheta = (this.theta - other.theta);
+        term1 = pow(sin(Dphi/2),2);
+        term2 = cos(this.phi) * cos(other.phi) * pow(sin(Dtheta/2), 2);
+        Drho = 2 * asin(sqrt(term1 + term2));
+        return Drho;
+      }
+
+      Star.prototype.projectedDistance = function(other){
+          return sqrt(pow((this.x-other.x),2) + pow((this.y-other.y),2));
+      }
+
+      function randomStar(){
+        //select a random point uniformly across a hemisphere
+        u = random();
+        v = random(0.5); //0-0.5: above horizon, 0.5-1 below horizon
+        phi = acos(2*v-1);
+        theta = TWO_PI * u;
+        luminosity = random();
+        s = new Star(phi, theta, luminosity);
+        //s.color = color(random(255), random(255), random(255));
+        return s;
+      }
+
+      function Constellation(){
+        this.stars = [];
+        this.edges = [];
+      }
+
+      Constellation.prototype.show = function(){
+        strokeWeight(0.5);
+        for (let edge of this.edges){
+          line(edge[0].x*width/2, edge[0].y*height/2, edge[1].x*width/2, edge[1].y*height/2);
+        }
+      }
+
+      Constellation.prototype.intersects = function(star1, star2){
+        for (let edge of this.edges){
+          if (intersects(
+            star1.x, star1.y, star2.x, star2.y,
+            edge[0].x, edge[0].y, edge[1].x, edge[1].y
+          )){
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Line segment intersection, see https://stackoverflow.com/questions/9043805/test-if-two-lines-intersect-javascript-function#15182022
+      // returns true iff the line from (a,b)->(c,d) instersects with (p,q)->(r,s)
+      function intersects(a,b,c,d,p,q,r,s) {
+        let det, gamma, lambda;
+        det = (c - a) * (s - q) - (r - p) * (d - b);
+        if (det === 0) {
+          return false;
+        } else {
+          lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
+          gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
+          return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+        }
+      }
+    </script>
+  </head>
+  <body>
     <table>
       <tr>
         <th colspan="2">
@@ -136,252 +382,4 @@
     </table>
     <br>
   </body>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/addons/p5.dom.min.js"></script>
-  <script>
-    const LUMINOSITY_MULTIPLIER = 2;
-
-    var CANVAS_SIZE = 500;
-    var CONSTELLATION_SIZE = 7;
-    var NUM_CONSTELLATIONS = 7;
-    var CONSTELLATION_DISTANCE = 0.1;
-    var INVERTED_COLOURS = 0;
-    var inpSeed;
-    var stars = [];
-    var constellations = [];
-
-    function setup() {
-      newSeed();
-
-      createCanvas(CANVAS_SIZE, CANVAS_SIZE);
-      background(0);
-      onInput();
-      
-      noLoop();
-    }
-
-    function newSeed(){
-      let seed = floor(random(Number.MAX_SAFE_INTEGER));
-      document.getElementById("inpseed").value = seed;
-      onInput();
-    }
-
-    function draw() {
-      translate(width/2, height/2);
-      if (INVERTED_COLOURS){
-        background(255);
-        stroke(0);
-        noFill();
-        strokeWeight(1);
-        ellipse(0, 0, width-1, height-1);
-      }else{
-        background(0);
-        stroke(255);
-        noFill();
-        strokeWeight(1);
-        ellipse(0, 0, width-1, height-1);
-      }
-      for(let star of stars){
-        star.show();
-      }
-      for(let constellation of constellations){
-        constellation.show();
-      }
-    }
-
-    function onInput(){
-      randomSeed(document.getElementById("inpseed").value);
-      let constellationSeed = random(Number.MAX_SAFE_INTEGER);
-      INVERTED_COLOURS = document.getElementById("invertcolours").checked;
-      NUM_CONSTELLATIONS = document.getElementById("numconstellations").value;
-      CONSTELLATION_SIZE = document.getElementById("constellationsize").value;
-      CONSTELLATION_DISTANCE = pow(2, document.getElementById("constellationdistance").value)/1024;
-      CANVAS_SIZE = document.getElementById("canvassize").value;
-      resizeCanvas(CANVAS_SIZE, CANVAS_SIZE);
-      stars = generateStars();
-      randomSeed(constellationSeed);
-      constellations = generateConstellations(stars);
-      redraw();
-      updateJSON()
-    }
-
-    function updateJSON(){
-      let data = {
-        'seed': document.getElementById("inpseed").value,
-        'num_constellations': document.getElementById("numconstellations").value,
-        'constellation_size': document.getElementById("constellationsize").value,
-        'constellation_distance': document.getElementById("constellationdistance").value,
-        'star_density': document.getElementById("stardensity").value,
-        'inverted_colours': document.getElementById("invertcolours").checked,
-        'canvas_size': document.getElementById("canvassize").value,
-      }
-      document.getElementById("inpjson").value = JSON.stringify(data);
-    }
-
-    function readJSON(){
-      data = JSON.parse(document.getElementById("inpjson").value);
-      document.getElementById("inpseed").value = data.seed;
-      document.getElementById("numconstellations").value = data.num_constellations;
-      document.getElementById("constellationsize").value = data.constellation_size;
-      document.getElementById("constellationdistance").value = data.constellation_distance;
-      document.getElementById("stardensity").value = data.star_density;
-      document.getElementById("invertcolours").checked = data.inverted_colours;
-      document.getElementById("canvassize").value=data.canvas_size;
-      onInput();
-    }
-
-    function generateStars(){
-      let stars = new Array(floor(pow(2, document.getElementById("stardensity").value)));
-      for(let i =0; i<stars.length; i++){
-        stars[i] = randomStar();
-      }
-      stars.sort((a, b) => a.luminosity-b.luminosity);
-      return stars
-    }
-
-    function generateConstellations(stars){
-      let constellations = [];
-      let remaining = stars.slice();
-      while (constellations.length < NUM_CONSTELLATIONS && remaining.length > 0){
-        let constellation = new Constellation();
-        constellation.stars.push(remaining.pop());
-        while (constellation.stars.length < CONSTELLATION_SIZE){
-          let selected = random(constellation.stars);
-          let found = false;
-          for (let i = 0; i < remaining.length; i++){
-            let star = remaining[i];
-            let inrange = selected.projectedDistance(star) < CONSTELLATION_DISTANCE;
-            let nointersect = true;
-            for (let otherconst of constellations){
-              if (otherconst.intersects(selected, star)){
-                nointersect = false;
-              }
-            }
-            if (inrange && nointersect){
-              constellation.stars.push(star);
-              constellation.edges.push([selected, star]);
-              remaining.splice(i, 1);
-              found = true;
-              break;
-            }
-          }
-          if (!found){
-            break;
-          }
-        }
-        constellations.push(constellation);
-      }
-      return constellations;
-    }
-
-
-
-    function polarToCartesian(angle, radius){
-      return {
-        x:radius * cos(angle),
-        y:radius * sin(angle)
-      };
-    }
-
-    function stereographicProject(phi, theta){
-      //returns a polar coordinate r, theta by projecting phi, theta
-      //from the sphere to the plane.
-      //phi is the zenith angle 0 <= phi <= PI
-      //theta is the azimuth angle 0 <= theta <= TWO_PI
-      return {
-        r:sin(phi)/(1-cos(phi)),
-        theta:theta
-      };
-    }
-
-    function stereographicToCartesian(phi, theta){
-      polar = stereographicProject(phi, theta);
-      return polarToCartesian(polar.theta, polar.r);
-    }
-
-    function Star(phi, theta, luminosity){
-      this.phi = phi;
-      this.theta = theta;
-      this.luminosity = luminosity;
-      this.r = stereographicProject(this.phi, this.theta).r;
-      let cart = stereographicToCartesian(this.phi, this.theta);
-      this.x = cart.x;
-      this.y = cart.y;
-      if (INVERTED_COLOURS){
-      this.color = color(0,0,0);
-      }else{
-        this.color = color(255,255,255);
-      }
-    }
-
-    Star.prototype.show = function(){
-      stroke(this.color);
-      strokeWeight(this.luminosity * LUMINOSITY_MULTIPLIER);
-      point(this.x * width / 2, this.y * height / 2);
-    }
-
-    Star.prototype.angleTo = function(other){
-      //returns the central angle between two stars in radians
-      Dphi = (this.phi - other.phi);
-      Dtheta = (this.theta - other.theta);
-      term1 = pow(sin(Dphi/2),2);
-      term2 = cos(this.phi) * cos(other.phi) * pow(sin(Dtheta/2), 2);
-      Drho = 2 * asin(sqrt(term1 + term2));
-      return Drho;
-    }
-
-    Star.prototype.projectedDistance = function(other){
-        return sqrt(pow((this.x-other.x),2) + pow((this.y-other.y),2));
-    }
-
-    function randomStar(){
-      //select a random point uniformly across a hemisphere
-      u = random();
-      v = random(0.5); //0-0.5: above horizon, 0.5-1 below horizon
-      phi = acos(2*v-1);
-      theta = TWO_PI * u;
-      luminosity = random();
-      s = new Star(phi, theta, luminosity);
-      //s.color = color(random(255), random(255), random(255));
-      return s;
-    }
-
-    function Constellation(){
-      this.stars = [];
-      this.edges = [];
-    }
-
-    Constellation.prototype.show = function(){
-      strokeWeight(0.5);
-      for (let edge of this.edges){
-        line(edge[0].x*width/2, edge[0].y*height/2, edge[1].x*width/2, edge[1].y*height/2);
-      }
-    }
-
-    Constellation.prototype.intersects = function(star1, star2){
-      for (let edge of this.edges){
-        if (intersects(
-          star1.x, star1.y, star2.x, star2.y,
-          edge[0].x, edge[0].y, edge[1].x, edge[1].y
-        )){
-          return true;
-        }
-      }
-      return false;
-    }
-
-    // Line segment intersection, see https://stackoverflow.com/questions/9043805/test-if-two-lines-intersect-javascript-function#15182022
-    // returns true iff the line from (a,b)->(c,d) instersects with (p,q)->(r,s)
-    function intersects(a,b,c,d,p,q,r,s) {
-      let det, gamma, lambda;
-      det = (c - a) * (s - q) - (r - p) * (d - b);
-      if (det === 0) {
-        return false;
-      } else {
-        lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
-        gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
-        return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
-      }
-    }
-  </script>
 </html>
