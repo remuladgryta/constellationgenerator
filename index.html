@@ -1,5 +1,49 @@
 <html>
   <head>
+    <style type="text/css">
+      table, th, td{
+        padding: 10px;
+      }
+
+      th, td{
+        text-align: center;
+        min-width: 100px;
+      }
+
+      th, tr {
+        height: 40px;
+      }
+
+      tr:nth-child(odd){
+        background-color: #f0f0f0;
+      }
+
+      th{
+        border: 1px solid black;
+      }
+
+      table{
+        border: 1px solid black;
+        border-spacing: 15px;
+        border-collapse: collapse;
+      }
+
+      .noBackground{
+        border: none;
+        background: #ffffff;
+        min-width: 40px;
+      }
+
+      .rightborder{
+        border-right: 1px solid black;
+      }
+
+      .slider{
+        width: 90%;
+        background: #d3d3d3;
+        height: 5px;
+      }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/addons/p5.dom.min.js"></script>
     <script>
@@ -15,79 +59,31 @@
       var stars = [];
       var constellations = [];
 
+      var inpseed;
+      var starDensity;
+      var numConstellations;
+      var constellationSize;
+      var constellationDistance;
+      var canvasSize;
+      var invertColours;
+
       function setup() {
-        let seed = floor(random(Number.MAX_SAFE_INTEGER));
-        let sdiv = createDiv('');
-        {
-          createSpan('seed: ').parent(sdiv);
-          inpSeed = createInput(seed);
-          inpSeed.input(onInput);
-          inpSeed.parent(sdiv);
-          resetSeed = createButton('change seed');
-          resetSeed.mousePressed(newSeed);
-        }
-        let ddiv = createDiv('');
-        {
-          createSpan('star density:').parent(ddiv);
-          starDensity = createSlider(4, 12, 8, 0);
-          starDensity.input(onInput);
-          starDensity.parent(ddiv);
-        }
-        let ndiv = createDiv('');
-        {
-          createSpan('number of constellations:').parent(ndiv);
-          numConstellations = createSlider(0, 24, 12, 1);
-          numConstellations.input(onInput);
-          numConstellations.parent(ndiv);
-        }
-        let spcdiv = createDiv('');
-        {
-          createSpan('stars per constellation:').parent(spcdiv);
-          constellationSize = createSlider(2, 12, 7, 1);
-          constellationSize.input(onInput);
-          constellationSize.parent(spcdiv);
-        }
-        let cmddiv = createDiv('');
-        {
-          createSpan('constellation max distance: ').parent(cmddiv);
-          constellationDistance = createSlider(6, 8.5, 7, 0);
-          constellationDistance.input(onInput);
-          constellationDistance.parent(cmddiv);
-        }
-        let csdiv = createDiv('');
-        {
-          createSpan('canvas size: ').parent(csdiv);
-          canvasSize = createSlider(100,2000, 500, 100);
-          canvasSize.input(onInput);
-          canvasSize.parent(csdiv);
-        }
-
-        let icdiv = createDiv('');
-        {
-          invertedColours = createCheckbox('invert colours');
-          invertedColours.changed(onInput);
-          invertedColours.parent(icdiv);
-        }
-
+        inpseed = document.getElementById("inpseed");
+        starDensity = document.getElementById("stardensity");
+        numConstellations = document.getElementById("numconstellations");
+        constellationSize = document.getElementById("constellationsize");
+        constellationDistance = document.getElementById("constellationdistance");
+        canvasSize = document.getElementById("canvassize");
+        invertColours = document.getElementById("invertcolours");
+        newSeed();
         createCanvas(CANVAS_SIZE, CANVAS_SIZE);
-
-        let jsondiv = createDiv('');
-        {
-          inpjson = createElement('textarea');
-          inpjson.parent(jsondiv);
-          spanjson = createDiv('Copy this to save current settings. Paste and press load json to restore them.');
-          spanjson.parent(jsondiv);
-          btnjson = createButton('load json');
-          btnjson.mousePressed(readJSON);
-          btnjson.parent(jsondiv);
-        }
         onInput();
         noLoop();
       }
 
       function newSeed(){
         let seed = floor(random(Number.MAX_SAFE_INTEGER));
-        inpSeed.value(seed);
+        inpseed.value = seed;
         onInput();
       }
 
@@ -98,15 +94,14 @@
           stroke(0);
           noFill();
           strokeWeight(1);
-          ellipse(0, 0, width, height);
+          ellipse(0, 0, width-1, height-1);
         }else{
           background(0);
           stroke(255);
           noFill();
           strokeWeight(1);
-          ellipse(0, 0, width, height);
+          ellipse(0, 0, width-1, height-1);
         }
-          
         for(let star of stars){
           star.show();
         }
@@ -116,14 +111,13 @@
       }
 
       function onInput(){
-        randomSeed(inpSeed.value());
+        randomSeed(inpseed.value);
         let constellationSeed = random(Number.MAX_SAFE_INTEGER);
-        INVERTED_COLOURS = invertedColours.checked();
-        NUM_CONSTELLATIONS = numConstellations.value();
-        CONSTELLATION_SIZE = constellationSize.value();
-        CONSTELLATION_DISTANCE = pow(2, constellationDistance.value())/1024;
-        CANVAS_SIZE = canvasSize.value();
-
+        INVERTED_COLOURS = invertColours.checked;
+        NUM_CONSTELLATIONS = numConstellations.value;
+        CONSTELLATION_SIZE = constellationSize.value;
+        CONSTELLATION_DISTANCE = pow(2, constellationDistance.value)/1024;
+        CANVAS_SIZE = canvasSize.value;
         resizeCanvas(CANVAS_SIZE, CANVAS_SIZE);
         stars = generateStars();
         randomSeed(constellationSeed);
@@ -134,29 +128,31 @@
 
       function updateJSON(){
         let data = {
-          'seed': inpSeed.value(),
-          'num_constellations': numConstellations.value(),
-          'constellation_size': constellationSize.value(),
-          'constellation_distance': constellationDistance.value(),
-          'star_density': starDensity.value(),
-          'inverted_colours': invertedColours.checked(),
+          'seed': inpseed.value,
+          'num_constellations': numConstellations.value,
+          'constellation_size': constellationSize.value,
+          'constellation_distance': constellationDistance.value,
+          'star_density': starDensity.value,
+          'inverted_colours': invertColours.checked,
+          'canvas_size': canvasSize.value,
         }
-        inpjson.value(JSON.stringify(data));
+        document.getElementById("inpjson").value = JSON.stringify(data);
       }
 
       function readJSON(){
-        data = JSON.parse(inpjson.value());
-        inpSeed.value(data.seed);
-        numConstellations.value(data.num_constellations);
-        constellationSize.value(data.constellation_size);
-        constellationDistance.value(data.constellation_distance);
-        starDensity.value(data.star_density);
-        invertedColours.checked(inverted_colours);
+        data = JSON.parse(document.getElementById("inpjson").value);
+        inpseed.value = data.seed;
+        numConstellations.value = data.num_constellations;
+        constellationSize.value = data.constellation_size;
+        constellationDistance.value = data.constellation_distance;
+        starDensity.value = data.star_density;
+        invertColours.checked = data.inverted_colours;
+        canvasSize.value=data.canvas_size;
         onInput();
       }
 
       function generateStars(){
-        let stars = new Array(floor(pow(2, starDensity.value())));
+        let stars = new Array(floor(pow(2, starDensity.value)));
         for(let i =0; i<stars.length; i++){
           stars[i] = randomStar();
         }
@@ -308,7 +304,97 @@
           return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
         }
       }
-
     </script>
   </head>
+  <body>
+    <table>
+      <tr>
+        <th colspan="2">
+          Generator Controls
+        </th>
+        <th colspan="2">
+          Other Controls
+        </th>
+        <th colspan="2">
+          JSON
+        </th>
+      </tr>
+      <tr>
+        <td>
+          <table class="noBackground">
+            <tr class="noBackground">
+              <td class="noBackground">Seed</td>
+              <td class="noBackground"><input type="button" id="resetseed" value="New Seed" onclick="newSeed()"></td>
+            </tr>
+          </table>
+        </td>
+        <td class="rightborder">
+          <input type="text" id="inpseed" oninput="onInput()">
+        </td>
+        <td>
+          Canvas Size
+        </td>
+        <td class="rightborder">
+          <input type="range" min="100" max="2000" value="500" step="100" class="slider" id="canvassize" oninput="onInput()">
+        </td>
+        <td colspan="2">
+          <textarea rows="3" cols="20" id="inpjson">
+            
+          </textarea>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Star Density
+        </td>
+        <td class="rightborder">
+          <input type="range" min="4" max="12" value="8" step="1e-18" class="slider" id="stardensity" oninput="onInput()">
+        </td>
+        <td>
+          Invert Colours
+        </td>
+        <td class="rightborder" onchange="onInput()">
+          <input type="checkbox" id="invertcolours">
+        </td>
+        <td colspan="2">
+          Copy this to save current settings.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Number of Constellations
+        </td>
+        <td class="rightborder">
+          <input type="range" min="0" max="24" value="12" class="slider" id="numconstellations" oninput="onInput()">
+        </td>
+        <td></td>
+        <td class="rightborder"></td>
+        <td colspan="2">
+           Paste and press 'load' to restore them.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Stars per Constellation
+        </td>
+        <td class="rightborder">
+          <input type="range" min="2" max="12" value="7" class="slider" id="constellationsize" oninput="onInput()">
+        </td>
+        <td></td><td class="rightborder"></td>
+        <td colspan="2">
+          <input type="button" name="btnloadjson", value="Load", onclick="readJSON()">
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Constellation Max Distance
+        </td>
+        <td class="rightborder">
+          <input type="range" min="6" max="8.5" value="7.25" step="0.01" class="slider" id="constellationdistance" oninput="onInput()">
+        </td>
+        <td><td class="rightborder"></td></td><td></td><td></td>
+      </tr>
+    </table>
+    <br>
+  </body>
 </html>
