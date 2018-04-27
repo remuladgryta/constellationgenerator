@@ -81,7 +81,7 @@
       }
 
       function newSeed(){
-        let seed = floor(random(Number.MAX_SAFE_INTEGER));
+        let seed = floor(random(99999999999999));
         inpSeed.value = seed;
         onInput();
       }
@@ -111,7 +111,7 @@
 
       function onInput(){
         randomSeed(inpSeed.value);
-        let constellationSeed = random(Number.MAX_SAFE_INTEGER);
+        let constellationSeed = random(99999999999999);
         INVERTED_COLOURS = invertColours.checked;
         NUM_CONSTELLATIONS = numConstellations.value;
         CONSTELLATION_SIZE = constellationSize.value;
