@@ -55,11 +55,10 @@
       var NUM_CONSTELLATIONS = 7;
       var CONSTELLATION_DISTANCE = 0.1;
       var INVERTED_COLOURS = 0;
-      var inpSeed;
       var stars = [];
       var constellations = [];
 
-      var inpseed;
+      var inpSeed;
       var starDensity;
       var numConstellations;
       var constellationSize;
@@ -68,7 +67,7 @@
       var invertColours;
 
       function setup() {
-        inpseed = document.getElementById("inpseed");
+        inpSeed = document.getElementById("inpseed");
         starDensity = document.getElementById("stardensity");
         numConstellations = document.getElementById("numconstellations");
         constellationSize = document.getElementById("constellationsize");
@@ -83,7 +82,7 @@
 
       function newSeed(){
         let seed = floor(random(Number.MAX_SAFE_INTEGER));
-        inpseed.value = seed;
+        inpSeed.value = seed;
         onInput();
       }
 
@@ -111,7 +110,7 @@
       }
 
       function onInput(){
-        randomSeed(inpseed.value);
+        randomSeed(inpSeed.value);
         let constellationSeed = random(Number.MAX_SAFE_INTEGER);
         INVERTED_COLOURS = invertColours.checked;
         NUM_CONSTELLATIONS = numConstellations.value;
@@ -128,7 +127,7 @@
 
       function updateJSON(){
         let data = {
-          'seed': inpseed.value,
+          'seed': inpSeed.value,
           'num_constellations': numConstellations.value,
           'constellation_size': constellationSize.value,
           'constellation_distance': constellationDistance.value,
@@ -141,7 +140,7 @@
 
       function readJSON(){
         data = JSON.parse(document.getElementById("inpjson").value);
-        inpseed.value = data.seed;
+        inpSeed.value = data.seed;
         numConstellations.value = data.num_constellations;
         constellationSize.value = data.constellation_size;
         constellationDistance.value = data.constellation_distance;
