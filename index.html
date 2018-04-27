@@ -59,7 +59,22 @@
       var stars = [];
       var constellations = [];
 
+      var inpseed;
+      var starDensity;
+      var numConstellations;
+      var constellationSize;
+      var constellationDistance;
+      var canvasSize;
+      var invertColours;
+
       function setup() {
+        inpseed = document.getElementById("inpseed");
+        starDensity = document.getElementById("stardensity");
+        numConstellations = document.getElementById("numconstellations");
+        constellationSize = document.getElementById("constellationsize");
+        constellationDistance = document.getElementById("constellationdistance");
+        canvasSize = document.getElementById("canvassize");
+        invertColours = document.getElementById("invertcolours");
         newSeed();
         createCanvas(CANVAS_SIZE, CANVAS_SIZE);
         onInput();
@@ -68,7 +83,7 @@
 
       function newSeed(){
         let seed = floor(random(Number.MAX_SAFE_INTEGER));
-        document.getElementById("inpseed").value = seed;
+        inpseed.value = seed;
         onInput();
       }
 
@@ -96,13 +111,13 @@
       }
 
       function onInput(){
-        randomSeed(document.getElementById("inpseed").value);
+        randomSeed(inpseed.value);
         let constellationSeed = random(Number.MAX_SAFE_INTEGER);
-        INVERTED_COLOURS = document.getElementById("invertcolours").checked;
-        NUM_CONSTELLATIONS = document.getElementById("numconstellations").value;
-        CONSTELLATION_SIZE = document.getElementById("constellationsize").value;
-        CONSTELLATION_DISTANCE = pow(2, document.getElementById("constellationdistance").value)/1024;
-        CANVAS_SIZE = document.getElementById("canvassize").value;
+        INVERTED_COLOURS = invertColours.checked;
+        NUM_CONSTELLATIONS = numConstellations.value;
+        CONSTELLATION_SIZE = constellationSize.value;
+        CONSTELLATION_DISTANCE = pow(2, constellationDistance.value)/1024;
+        CANVAS_SIZE = canvasSize.value;
         resizeCanvas(CANVAS_SIZE, CANVAS_SIZE);
         stars = generateStars();
         randomSeed(constellationSeed);
@@ -113,31 +128,31 @@
 
       function updateJSON(){
         let data = {
-          'seed': document.getElementById("inpseed").value,
-          'num_constellations': document.getElementById("numconstellations").value,
-          'constellation_size': document.getElementById("constellationsize").value,
-          'constellation_distance': document.getElementById("constellationdistance").value,
-          'star_density': document.getElementById("stardensity").value,
-          'inverted_colours': document.getElementById("invertcolours").checked,
-          'canvas_size': document.getElementById("canvassize").value,
+          'seed': inpseed.value,
+          'num_constellations': numConstellations.value,
+          'constellation_size': constellationSize.value,
+          'constellation_distance': constellationDistance.value,
+          'star_density': starDensity.value,
+          'inverted_colours': invertColours.checked,
+          'canvas_size': canvasSize.value,
         }
         document.getElementById("inpjson").value = JSON.stringify(data);
       }
 
       function readJSON(){
         data = JSON.parse(document.getElementById("inpjson").value);
-        document.getElementById("inpseed").value = data.seed;
-        document.getElementById("numconstellations").value = data.num_constellations;
-        document.getElementById("constellationsize").value = data.constellation_size;
-        document.getElementById("constellationdistance").value = data.constellation_distance;
-        document.getElementById("stardensity").value = data.star_density;
-        document.getElementById("invertcolours").checked = data.inverted_colours;
-        document.getElementById("canvassize").value=data.canvas_size;
+        inpseed.value = data.seed;
+        numConstellations.value = data.num_constellations;
+        constellationSize.value = data.constellation_size;
+        constellationDistance.value = data.constellation_distance;
+        starDensity.value = data.star_density;
+        invertColours.checked = data.inverted_colours;
+        canvasSize.value=data.canvas_size;
         onInput();
       }
 
       function generateStars(){
-        let stars = new Array(floor(pow(2, document.getElementById("stardensity").value)));
+        let stars = new Array(floor(pow(2, starDensity.value)));
         for(let i =0; i<stars.length; i++){
           stars[i] = randomStar();
         }
