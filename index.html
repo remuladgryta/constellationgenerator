@@ -51,7 +51,8 @@
 
 
       var CANVAS_SIZE = 500;
-      var CONSTELLATION_SIZE = 7;
+      var MIN_CONSTELLATION_SIZE = 7;
+      var CONSTELLATION_SIZE_RANGE = 0;
       var NUM_CONSTELLATIONS = 7;
       var CONSTELLATION_DISTANCE = 0.1;
       var INVERTED_COLOURS = 0;
@@ -61,7 +62,8 @@
       var inpSeed;
       var starDensity;
       var numConstellations;
-      var constellationSize;
+      var minConstellationSize;
+      var constellationSizeRange;
       var constellationDistance;
       var canvasSize;
       var invertColours;
@@ -70,7 +72,8 @@
         inpSeed = document.getElementById("inpseed");
         starDensity = document.getElementById("stardensity");
         numConstellations = document.getElementById("numconstellations");
-        constellationSize = document.getElementById("constellationsize");
+        minConstellationSize = document.getElementById("minconstellationsize");
+        constellationSizeRange = document.getElementById("constellationsizerange");
         constellationDistance = document.getElementById("constellationdistance");
         canvasSize = document.getElementById("canvassize");
         invertColours = document.getElementById("invertcolours");
@@ -113,8 +116,9 @@
         randomSeed(inpSeed.value);
         let constellationSeed = random(99999999999999);
         INVERTED_COLOURS = invertColours.checked;
-        NUM_CONSTELLATIONS = numConstellations.value;
-        CONSTELLATION_SIZE = constellationSize.value;
+        NUM_CONSTELLATIONS = parseInt(numConstellations.value);
+        MIN_CONSTELLATION_SIZE = parseInt(minConstellationSize.value);
+        CONSTELLATION_SIZE_RANGE = parseInt(constellationSizeRange.value);
         CONSTELLATION_DISTANCE = pow(2, constellationDistance.value)/1024;
         CANVAS_SIZE = canvasSize.value;
         resizeCanvas(CANVAS_SIZE, CANVAS_SIZE);
@@ -129,7 +133,8 @@
         let data = {
           'seed': inpSeed.value,
           'num_constellations': numConstellations.value,
-          'constellation_size': constellationSize.value,
+          'min_constellation_size': minConstellationSize.value,
+          'constellation_size_range': constellationSizeRange.value,
           'constellation_distance': constellationDistance.value,
           'star_density': starDensity.value,
           'inverted_colours': invertColours.checked,
@@ -142,7 +147,8 @@
         data = JSON.parse(document.getElementById("inpjson").value);
         inpSeed.value = data.seed;
         numConstellations.value = data.num_constellations;
-        constellationSize.value = data.constellation_size;
+        minConstellationSize.value = data.min_constellation_size;
+        constellationSizeRange.value = data.constellation_size_range;
         constellationDistance.value = data.constellation_distance;
         starDensity.value = data.star_density;
         invertColours.checked = data.inverted_colours;
@@ -165,6 +171,9 @@
         while (constellations.length < NUM_CONSTELLATIONS && remaining.length > 0){
           let constellation = new Constellation();
           constellation.stars.push(remaining.pop());
+
+          var CONSTELLATION_SIZE = Math.round(random(CONSTELLATION_SIZE_RANGE)) + MIN_CONSTELLATION_SIZE;
+
           while (constellation.stars.length < CONSTELLATION_SIZE){
             let selected = random(constellation.stars);
             let found = false;
@@ -374,14 +383,25 @@
       </tr>
       <tr>
         <td>
-          Stars per Constellation
+          Minimum Stars per Constellation
         </td>
         <td class="rightborder">
-          <input type="range" min="2" max="12" value="7" class="slider" id="constellationsize" oninput="onInput()">
+          <input type="range" min="2" max="12" value="7" class="slider" id="minconstellationsize" oninput="onInput()">
         </td>
         <td></td><td class="rightborder"></td>
         <td colspan="2">
           <input type="button" name="btnloadjson", value="Load", onclick="readJSON()">
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Additional Stars per Constellation
+        </td>
+        <td class="rightborder">
+          <input type="range" min="0" max="6" value="0" class="slider" id="constellationsizerange" oninput="onInput()">
+        </td>
+        <td></td><td class="rightborder"></td>
+        <td colspan="2">
         </td>
       </tr>
       <tr>
